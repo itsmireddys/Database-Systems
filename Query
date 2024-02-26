@@ -1,0 +1,106 @@
+/* Insert into Patients table */
+INSERT INTO Patients(PatientID, Name, Age, Weight, Gender, Phone_no, Problem) VALUES (106, 'Smith carle', 30, 45, 'Male', '4512257825',
+'Body Pains');
+
+/* Insert into Doctors table */
+INSERT INTO doctors (DoctorID, DoctorName, Department) VALUES (6, 'Daniel Joes', 'Physiatrists');
+
+/* Update Patients table */
+UPDATE Patients SET Name = 'Danial Thomas' WHERE PatientID = 106;
+
+/* Update Medication table */
+UPDATE medication SET T_Name = 'Dolo650' WHERE MedicationID='3002';
+
+/* Delete from Medication table */
+DELETE FROM Doctors WHERE DoctorID = 6;
+
+/* Select from Patients table */
+SELECT PatientID, Name, Age, Weight FROM Patients WHERE Age < 60;
+
+/* INNER JOIN ( Join Patients and Inpatient tables ) */
+SELECT Patients.*, Inpatient.*
+FROM Patients
+INNER JOIN Inpatient ON Patients.PatientID = Inpatient.PatientID;
+
+/* INNER JOIN ( Join Doctors and Patients through Inpatient ) */
+SELECT DoctorName AS Doctor_Name, Name AS Patient_Name, Inpatient.Date_of_adm, Inpatient.Room_no
+FROM Doctors
+LEFT OUTER JOIN Inpatient ON Doctors.DoctorID = Inpatient.DoctorID
+LEFT OUTER JOIN Patients ON Inpatient.PatientID = Patients.PatientID;
+
+/* Count of Patients by Gender */
+SELECT Gender, COUNT(*) AS count FROM Patients GROUP BY gender;
+
+/* Average Room charge amount */
+SELECT AVG(Room_charge) AS average_Room_charge FROM Bill;
+
+/* Patients, their room details, and the responsible doctor's name */
+SELECT patients.PatientID, Patients.Name AS Patient_Name, Doctors.DoctorName AS Doctor_Name, Rooms.Room_no 
+FROM Patients 
+JOIN Inpatient ON Patients.PatientID = Inpatient.PatientID 
+JOIN Rooms ON Inpatient.Room_no = Rooms.Room_no
+JOIN Doctors ON Inpatient.DoctorID = Doctors.DoctorID;
+
+/* Patients and their medication details */
+SELECT Patients.Name AS patient_name, Medication.MedicationID, Medication.T_Name AS Tablet_Name 
+FROM Patients 
+JOIN Medication ON patients.PatientID = Medication.PatientID;
+
+/* Indexes */
+
+CREATE INDEX idx_inpatient_Date_of_adm ON Inpatient(Date_of_adm);
+
+CREATE INDEX idx_bill_status ON Bill(Doctor_charge);
+
+CREATE INDEX idx_outpatient_Date_of_adm ON Outpatient(Date_of_dis);
+
+
+/* Views */
+CREATE VIEW PatientAdmissions AS
+SELECT Patients.PatientID, Patients.Name, Patients.Age, Patients.Gender, Inpatient.Date_of_adm, 
+outpatient.Date_of_dis, Inpatient.Room_no
+FROM Patients
+JOIN Inpatient ON Patients.PatientID = Inpatient.PatientID
+JOIN Outpatient ON Patients.PatientID = Outpatient.PatientID;
+
+CREATE VIEW DoctorPatientAssignments AS
+SELECT Doctors.DoctorID, Doctors.DoctorName, Doctors.department, 
+Patients.PatientID, Patients.Name AS Patient_Name
+FROM Doctors
+JOIN Inpatient ON Doctors.DoctorID = Inpatient.DoctorID
+JOIN Patients ON Inpatient.PatientID = Patients.PatientID;
+
+/* TRANSACTION */
+
+START TRANSACTION;
+
+/* Update discharge date in Inpatient table */
+UPDATE outpatient
+SET Date_of_dis = NOW()
+WHERE PatientID = 102 AND Date_of_dis IS NULL;
+
+/* Update Room Charge bill amount in Bill table */
+UPDATE Bill
+SET Room_charge = Room_charge + 300 -- Assume 300 is the extra charge for Room. 
+WHERE PatientID = 102;
+
+/* Check for errors and commit transaction */
+COMMIT;
+
+/* GRANT */
+CREATE USER 'Robert Anderson'@'localhost' IDENTIFIED BY 'password123';
+GRANT ALL PRIVILEGES ON *.* TO 'Robert Anderson'@'localhost' WITH GRANT OPTION;
+
+CREATE USER 'Kathryn_Barlow'@'localhost' IDENTIFIED BY 'password123';
+
+GRANT SELECT, INSERT, UPDATE ON patients TO 'Kathryn_Barlow'@'localhost';
+GRANT SELECT, INSERT, UPDATE ON inpatient TO 'Kathryn_Barlow'@'localhost';
+GRANT SELECT, INSERT, UPDATE ON labs TO 'Kathryn_Barlow'@'localhost';
+
+CREATE USER 'Jule_Cronk'@'localhost' IDENTIFIED BY 'password123';
+GRANT SELECT ON patients TO 'Jule_Cronk'@'localhost';
+GRANT SELECT, UPDATE ON medication TO 'Jule_Cronk'@'localhost';
+
+CREATE USER 'Tanya_Sale'@'localhost' IDENTIFIED BY 'password123';
+GRANT SELECT ON patients TO 'Tanya_Sale'@'localhost';
+
